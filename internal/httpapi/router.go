@@ -33,6 +33,7 @@ type Server struct {
 	assignments *service.AssignmentService
 	submissions *service.SubmissionService
 	reviews     *service.ReviewService
+	extensions  *service.ExtensionService
 }
 
 // New 构造服务；ttl 为会话有效期。
@@ -46,6 +47,7 @@ func New(st *store.Store, clk *clock.Clock, ttl time.Duration) *Server {
 		assignments: service.NewAssignmentService(st, clk),
 		submissions: service.NewSubmissionService(st, clk),
 		reviews:     service.NewReviewService(st, clk),
+		extensions:  service.NewExtensionService(st, clk),
 	}
 }
 

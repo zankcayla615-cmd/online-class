@@ -277,7 +277,8 @@ func TestWriteEndpointRoleMatrix(t *testing.T) {
 		{"学生批阅", student, "HW1/reviews", http.StatusForbidden},
 		{"外班教师批阅本班作业", teacher, "HW2/reviews", http.StatusNotFound},
 
-		{"教师批准补交", teacher, "HW1/extensions", http.StatusNotImplemented},
+		// 教师批准补交的完整用例见 extensions_test.go；此处空请求体应判 400。
+		{"教师批准补交空请求体", teacher, "HW1/extensions", http.StatusBadRequest},
 		{"助教批准补交", assistant, "HW1/extensions", http.StatusForbidden},
 		{"学生批准补交", student, "HW1/extensions", http.StatusForbidden},
 
