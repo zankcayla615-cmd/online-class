@@ -13,4 +13,6 @@ bin/
 # 临时文件
 .tmp*
 *.log
-.git-commit-msg.txt 
+# 但质量证据里的原始日志要入库
+!deliverables/**/*.log
+.git-commit-msg.txt
