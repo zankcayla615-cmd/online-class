@@ -344,8 +344,9 @@ func TestHistoryPermissions(t *testing.T) {
 	if _, err := svc.History(ctx, e.user(t, "T01"), a.ID, "S01"); err != nil {
 		t.Fatalf("教师查看本班学生应允许，实际 %v", err)
 	}
-	if _, err := svc.History(ctx, e.user(t, "A01"), a.ID, "S02"); err != nil {
-		t.Fatalf("助教查看本班学生应允许，实际 %v", err)
+	// AS-07：助教不可查看答案正文，只能看状态与统计。
+	if _, err := svc.History(ctx, e.user(t, "A01"), a.ID, "S02"); err == nil || code(t, err) != "forbidden_role" {
+		t.Fatalf("助教查看学生正文应被拒绝，实际 %v", err)
 	}
 	if _, err := svc.History(ctx, e.user(t, "T01"), a.ID, "X01"); err == nil || code(t, err) != "not_found" {
 		t.Fatalf("跨班查看应返回 not_found，实际 %v", err)

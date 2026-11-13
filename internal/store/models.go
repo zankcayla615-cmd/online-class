@@ -80,6 +80,50 @@ type Extension struct {
 	GrantedAt    time.Time
 }
 
+// Reminder 是一条催交记录：只追加，不提供修改/删除方法（题面要求"不可篡改"）。
+type Reminder struct {
+	ID           string
+	AssignmentID string
+	StudentID    string
+	AssistantID  string
+	Channel      string
+	Note         string
+	CreatedAt    time.Time
+}
+
+// 催交方式常量：题面只要求"站内/电话/群"，用稳定代码存储，页面再翻译成中文。
+const (
+	ChannelInApp = "in_app"
+	ChannelPhone = "phone"
+	ChannelGroup = "group"
+)
+
+// Event 是审计事件，也是时间线的唯一来源。
+type Event struct {
+	ID           int64
+	AssignmentID string
+	StudentID    string
+	ActorID      string
+	ActorRole    string
+	Type         string
+	Detail       string
+	FromState    string
+	ToState      string
+	VersionNo    *int
+	CreatedAt    time.Time
+}
+
+// EnrollmentRow 是看板/汇总用的状态行快照：只有状态与时间，不含正文。
+type EnrollmentRow struct {
+	StudentID        string
+	StudentName      string
+	State            string
+	CurrentVersionNo int
+	SubmissionCount  int
+	FirstSubmittedAt time.Time
+	LastSubmittedAt  time.Time
+}
+
 // User 是账号。
 type User struct {
 	ID           string

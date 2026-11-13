@@ -247,6 +247,10 @@ func (s *SubmissionService) History(ctx context.Context, actor store.User, assig
 
 // ensureCanViewStudent 校验查看他人提交的权限：学生仅本人，教师/助教限本班学生。
 func (s *SubmissionService) ensureCanViewStudent(ctx context.Context, actor store.User, studentID string) error {
+	// AS-07：助教只做跟进，不能看学生答案正文；状态与时间走看板接口。
+	if actor.Role == store.RoleAssistant {
+		return apperr.Forbidden("助教只能查看统计信息，不可查看学生作业正文")
+	}
 	if actor.Role == store.RoleStudent {
 		if studentID != actor.ID {
 			return apperr.Forbidden("学生只能查看自己的提交")

@@ -34,6 +34,7 @@ type Server struct {
 	submissions *service.SubmissionService
 	reviews     *service.ReviewService
 	extensions  *service.ExtensionService
+	overview    *service.OverviewService
 }
 
 // New 构造服务；ttl 为会话有效期。
@@ -48,6 +49,7 @@ func New(st *store.Store, clk *clock.Clock, ttl time.Duration) *Server {
 		submissions: service.NewSubmissionService(st, clk),
 		reviews:     service.NewReviewService(st, clk),
 		extensions:  service.NewExtensionService(st, clk),
+		overview:    service.NewOverviewService(st, clk),
 	}
 }
 
@@ -72,6 +74,8 @@ func (s *Server) Handler() http.Handler {
 	mux.Handle("GET /api/assignments/{id}/submissions", s.requireAuth(http.HandlerFunc(s.handleSubmissionList)))
 	mux.Handle("POST /api/assignments/{id}/reviews", s.requireAuth(http.HandlerFunc(s.handleReviewPost)))
 	mux.Handle("POST /api/assignments/{id}/extensions", s.requireAuth(http.HandlerFunc(s.handleExtensionPost)))
+	mux.Handle("GET /api/assignments/{id}/board", s.requireAuth(http.HandlerFunc(s.handleBoardGet)))
+	mux.Handle("GET /api/assignments/{id}/summary", s.requireAuth(http.HandlerFunc(s.handleSummaryGet)))
 	mux.Handle("POST /api/assignments/{id}/reminders", s.requireAuth(http.HandlerFunc(s.handleReminderPost)))
 
 	return s.withUser(mux)

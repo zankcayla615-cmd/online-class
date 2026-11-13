@@ -108,18 +108,3 @@ func (s *Server) handleStudentGet(w http.ResponseWriter, r *http.Request) {
 		"class_id": target.ClassID,
 	})
 }
-
-// 催交接口在 D-03 只做权限校验，业务逻辑由 D-10 补齐；
-// 通过权限后返回 501，便于权限矩阵测试与页面联调区分"无权"与"未实现"。
-
-func (s *Server) handleReminderPost(w http.ResponseWriter, r *http.Request) {
-	_, u, ok := s.assignmentFor(w, r)
-	if !ok {
-		return
-	}
-	if !Allow(u.Role, ActionRecordReminder, true, false) {
-		writeAPIError(w, http.StatusForbidden, "forbidden_role", "只有本班助教可以记录催交")
-		return
-	}
-	writeAPIError(w, http.StatusNotImplemented, "not_implemented", "催交能力将在 D-10 实现，当前仅完成权限校验")
-}

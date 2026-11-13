@@ -232,8 +232,9 @@ func TestSubmissionListPermissionsOverHTTP(t *testing.T) {
 	if code, _ := doJSONBody(t, teacher, http.MethodGet, base+"?student_id=S01", nil); code != http.StatusOK {
 		t.Fatalf("教师查看本班提交应 200，实际 %d", code)
 	}
-	if code, _ := doJSONBody(t, assistant, http.MethodGet, base+"?student_id=S02", nil); code != http.StatusOK {
-		t.Fatalf("助教查看本班学生应 200，实际 %d", code)
+	// AS-07：助教不能看学生答案正文，只能走看板/汇总接口。
+	if code, _ := doJSONBody(t, assistant, http.MethodGet, base+"?student_id=S02", nil); code != http.StatusForbidden {
+		t.Fatalf("助教查看学生正文应 403，实际 %d", code)
 	}
 	if code, _ := doJSONBody(t, student, http.MethodGet, base+"?student_id=S02", nil); code != http.StatusForbidden {
 		t.Fatalf("学生查看同学应 403，实际 %d", code)
