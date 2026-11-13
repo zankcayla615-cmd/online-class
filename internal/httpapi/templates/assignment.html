@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>{{template "head" "我的作业"}}</head>
+<body>
+{{template "top" .}}
+<main>
+  {{if .Base.OK}}<div class="flash">{{.Base.OK}}</div>{{end}}
+
+  <section class="card">
+    <h1>{{.Title}}</h1>
+    <div class="tagline">
+      <span class="chip state-{{.State}}">{{.StateLabel}}</span>
+      <span class="muted">当前版本 v{{.CurrentVersionNo}}</span>
+      <span class="muted">有效截止 {{.Deadline}}</span>
+      {{if .Extension}}<span class="chip warn">已批补交</span>{{end}}
+    </div>
+    {{if .Extension}}
+    <div class="errbox" style="background:#fff8ec;color:#9a5b00;border-color:#f3ddb8">
+      补交截止 {{.Extension.DeadlineAt.Format "2006-01-02 15:04"}}，原因：{{.Extension.Reason}}（仅对你生效）
+    </div>
+    {{end}}
+    <h3>提交要求</h3>
+    <div class="answer">{{.Requirement}}</div>
+  </section>
+
+  <section class="card">
+    <h2>提交作业</h2>
+    {{if .CanSubmit}}
+    <form class="form" method="post" action="/assignments/{{.Assignment.ID}}/submit">
+      <input type="hidden" name="request_id" value="{{.RequestID}}">
+      <input type="hidden" name="base_version" value="{{.CurrentVersionNo}}">
+      <label>我的答案
+        <textarea name="content" rows="8" required maxlength="5000"
+                  placeholder="粘贴或输入答案；更新会生成新版本，旧版本与批阅意见仍可查">{{.DraftContent}}</textarea>
+      </label>
+      <div class="actions">
+        <button class="btn primary" type="submit">{{if .Versions}}提交新版本{{else}}提交{{end}}</button>
+        <span class="muted">基于当前版本 v{{.CurrentVersionNo}} 提交；页面过期会被拒绝并提示刷新。</span>
+      </div>
+    </form>
+    {{else}}
+    <div class="errbox">{{if .BlockedReason}}{{.BlockedReason}}{{else}}当前不可提交{{end}}</div>
+    {{end}}
+  </section>
+
+  <section class="card">
+    <h2>版本与反馈</h2>
+    <table>
+      <thead><tr><th>版本</th><th>提交时间</th><th>内容</th><th>批阅结论</th></tr></thead>
+      <tbody>
+        {{range .Versions}}
+        <tr>
+          <td>v{{.No}}</td>
+          <td>{{.CreatedAt}}</td>
+          <td><div class="answer">{{.Content}}</div></td>
+          <td>
+            {{if .Decision}}
+              <span class="chip {{if eq .Decision "通过"}}state-PASSED{{else}}state-RETURNED{{end}}">{{.Decision}}</span>
+              <div class="muted" style="margin-top:6px">{{.Feedback}}</div>
+              <div class="muted">{{.ReviewedAt}}</div>
+            {{else}}<span class="muted">待批阅</span>{{end}}
+          </td>
+        </tr>
+        {{else}}
+        <tr><td colspan="4" class="empty">还没有提交记录。</td></tr>
+        {{end}}
+      </tbody>
+    </table>
+  </section>
+
+  <section class="card">
+    <h2>我的积分</h2>
+    <p>累计 <b style="font-size:20px">{{.Points}}</b> 分</p>
+    <table>
+      <thead><tr><th>时间</th><th>事项</th><th>分值</th></tr></thead>
+      <tbody>
+        {{range .Entries}}
+        <tr>
+          <td>{{.CreatedAt.Format "2006-01-02 15:04"}}</td>
+          <td>{{if eq .Reason "first_pass"}}首次通过{{else}}{{.Reason}}{{end}}</td>
+          <td>+{{.Points}}</td>
+        </tr>
+        {{else}}
+        <tr><td colspan="3" class="empty">还没有积分记录；首次通过后发放 10 分。</td></tr>
+        {{end}}
+      </tbody>
+    </table>
+  </section>
+</main>
+</body>
+</html>

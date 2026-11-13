@@ -90,35 +90,6 @@ func (s *Server) renderLogin(w http.ResponseWriter, status int, errMsg, userID s
 	}
 }
 
-// handleHome 是登录后的临时首页（D-11 替换为正式页面）：
-// 展示当前身份与该角色可执行的动作，用于演示权限边界。
-func (s *Server) handleHome(w http.ResponseWriter, r *http.Request) {
-	u, ok := userFrom(r)
-	if !ok {
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
-		return
-	}
-	actions := []Action{ActionViewAssignment, ActionSubmit, ActionReview, ActionGrantExtension, ActionRecordReminder, ActionViewStudent}
-	var allowed []string
-	for _, a := range actions {
-		if Allow(u.Role, a, true, true) {
-			allowed = append(allowed, actionLabel(a))
-		}
-	}
-	data := map[string]any{
-		"User":        u,
-		"Role":        roleLabel(u.Role),
-		"Allowed":     allowed,
-		"Now":         s.clk.Now().Format("2006-01-02 15:04 MST"),
-		"Offset":      s.clk.Offset().String(),
-		"StudentView": u.Role == store.RoleStudent,
-	}
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := s.tpl.ExecuteTemplate(w, "home.html", data); err != nil {
-		logError("渲染首页", err)
-	}
-}
-
 func roleLabel(role string) string {
 	switch role {
 	case store.RoleTeacher:
@@ -129,22 +100,4 @@ func roleLabel(role string) string {
 		return "学生"
 	}
 	return role
-}
-
-func actionLabel(a Action) string {
-	switch a {
-	case ActionViewAssignment:
-		return "查看本班作业"
-	case ActionSubmit:
-		return "提交/更新自己的作业"
-	case ActionReview:
-		return "批阅作业"
-	case ActionGrantExtension:
-		return "批准补交"
-	case ActionRecordReminder:
-		return "记录催交"
-	case ActionViewStudent:
-		return "查看学生状态"
-	}
-	return string(a)
 }

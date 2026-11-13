@@ -62,7 +62,21 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /login", s.handleLoginPage)
 	mux.HandleFunc("POST /login", s.handleLogin)
 	mux.HandleFunc("POST /logout", s.handleLogout)
-	mux.HandleFunc("GET /{$}", s.handleHome)
+	mux.HandleFunc("GET /{$}", s.handleRoot)
+
+	// 页面路由：服务端渲染，表单提交走 PRG，规则仍由 service 判定。
+	mux.HandleFunc("GET /assignments", s.handleAssignmentsPage)
+	mux.HandleFunc("POST /assignments", s.handleAssignmentCreatePage)
+	mux.HandleFunc("POST /assignments/{id}", s.handleAssignmentUpdatePage)
+	mux.HandleFunc("POST /assignments/{id}/publish", s.handleAssignmentPublishPage)
+	mux.HandleFunc("GET /assignments/{id}", s.handleStudentAssignmentPage)
+	mux.HandleFunc("POST /assignments/{id}/submit", s.handleSubmitPage)
+	mux.HandleFunc("GET /assignments/{id}/review", s.handleReviewPage)
+	mux.HandleFunc("POST /assignments/{id}/review", s.handleReviewSubmitPage)
+	mux.HandleFunc("POST /assignments/{id}/extension", s.handleExtensionPage)
+	mux.HandleFunc("GET /assignments/{id}/summary", s.handleSummaryPage)
+	mux.HandleFunc("GET /assignments/{id}/board", s.handleBoardPage)
+	mux.HandleFunc("POST /assignments/{id}/reminder", s.handleReminderPage)
 
 	mux.Handle("GET /api/me", s.requireAuth(http.HandlerFunc(s.handleMe)))
 	mux.Handle("POST /api/assignments", s.requireAuth(http.HandlerFunc(s.handleAssignmentCreate)))

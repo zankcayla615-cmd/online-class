@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>{{template "head" "助教看板"}}</head>
+<body>
+{{template "top" .}}
+<main>
+  {{if .Base.OK}}<div class="flash">{{.Base.OK}}</div>{{end}}
+
+  <section class="card">
+    <h1>班级看板 · {{.Title}}</h1>
+    <div class="tagline">
+      <span class="muted">作业截止 {{.Deadline}}</span>
+      <span class="chip">完成率 {{.CompletionRate}}</span>
+      {{if .CanRemind}}<span class="muted">助教可记录催交，记录只追加、不可改</span>{{end}}
+    </div>
+    <div class="grid">
+      <div class="stat"><span>未提交</span><b>{{index .Counts "not_submitted"}}</b></div>
+      <div class="stat"><span>待批阅</span><b>{{index .Counts "submitted"}}</b></div>
+      <div class="stat"><span>已退回</span><b>{{index .Counts "returned"}}</b></div>
+      <div class="stat"><span>已通过</span><b>{{index .Counts "passed"}}</b></div>
+      <div class="stat"><span>班级人数</span><b>{{index .Counts "total"}}</b></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>学生状态</h2>
+    <table>
+      <thead><tr><th>学生</th><th>状态</th><th>版本</th><th>最近提交</th><th>有效截止</th><th>催交</th></tr></thead>
+      <tbody>
+        {{range .Students}}
+        <tr>
+          <td><b>{{.Name}}</b><div class="muted">{{.StudentID}}</div></td>
+          <td>
+            <span class="chip state-{{.State}}">{{.StateLabel}}</span>
+            {{if .Overdue}}<span class="chip warn">逾期未交</span>{{end}}
+            {{if .ExtensionApplied}}<span class="chip">已批补交</span>{{end}}
+          </td>
+          <td>v{{.CurrentVersionNo}}</td>
+          <td>{{if .LastSubmitted}}{{.LastSubmitted}}{{else}}—{{end}}</td>
+          <td>{{.EffectiveDeadline}}</td>
+          <td>{{.ReminderCount}} 次{{if .LastReminder}}<div class="muted">{{.LastReminder}}</div>{{end}}</td>
+        </tr>
+        {{else}}
+        <tr><td colspan="6" class="empty">还没有学生名单。</td></tr>
+        {{end}}
+      </tbody>
+    </table>
+  </section>
+
+  {{if .CanRemind}}
+  <section class="card">
+    <h2>记录催交</h2>
+    <form class="form" method="post" action="/assignments/{{.Assignment.ID}}/reminder">
+      <div class="row2">
+        <label>学生
+          <select name="student_id" required>
+            {{range .Students}}
+            <option value="{{.StudentID}}">{{.Name}}（{{.StudentID}} · {{.StateLabel}}）</option>
+            {{end}}
+          </select>
+        </label>
+        <label>方式
+          <select name="channel" required>
+            <option value="in_app">站内</option>
+            <option value="phone">电话</option>
+            <option value="group">群</option>
+          </select>
+        </label>
+      </div>
+      <label>沟通结果摘要（最多 200 字）
+        <textarea name="note" rows="2" required maxlength="200" placeholder="例如：电话未接，已在班级群提醒"></textarea>
+      </label>
+      <button class="btn primary" type="submit">记录本次催交</button>
+    </form>
+  </section>
+  {{end}}
+
+  <section class="card">
+    <h2>催交记录（{{.ReminderCount}} 条）</h2>
+    <table>
+      <thead><tr><th>时间</th><th>学生</th><th>方式</th><th>摘要</th><th>记录人</th></tr></thead>
+      <tbody>
+        {{range .Reminders}}
+        <tr>
+          <td>{{.Time}}</td>
+          <td>{{.StudentID}}</td>
+          <td>{{.ChannelLabel}}</td>
+          <td>{{.Note}}</td>
+          <td class="muted">{{.AssistantID}}</td>
+        </tr>
+        {{else}}
+        <tr><td colspan="5" class="empty">还没有催交记录。</td></tr>
+        {{end}}
+      </tbody>
+    </table>
+  </section>
+</main>
+</body>
+</html>
