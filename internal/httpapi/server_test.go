@@ -267,7 +267,7 @@ func TestWriteEndpointRoleMatrix(t *testing.T) {
 		id     string
 		want   int
 	}{
-		{"学生提交自己作业", student, "HW1/submissions", http.StatusNotImplemented},
+		// 学生提交的完整用例见 submissions_test.go（需要先发布作业以生成状态行）。
 		{"教师提交作业", teacher, "HW1/submissions", http.StatusForbidden},
 		{"助教提交作业", assistant, "HW1/submissions", http.StatusForbidden},
 

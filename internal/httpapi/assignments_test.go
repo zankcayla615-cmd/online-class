@@ -3,6 +3,7 @@ package httpapi_test
 import (
 	"bytes"
 	"encoding/json"
+	"io"
 	"net/http"
 	"testing"
 	"time"
@@ -19,7 +20,7 @@ func jsonBody(t *testing.T, v any) *bytes.Reader {
 	return bytes.NewReader(buf)
 }
 
-func doJSONBody(t *testing.T, c *http.Client, method, target string, body *bytes.Reader) (int, map[string]any) {
+func doJSONBody(t *testing.T, c *http.Client, method, target string, body io.Reader) (int, map[string]any) {
 	t.Helper()
 	req, err := http.NewRequest(method, target, body)
 	if err != nil {

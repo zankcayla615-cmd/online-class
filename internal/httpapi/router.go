@@ -31,6 +31,7 @@ type Server struct {
 	sessions    *session.Manager
 	tpl         *template.Template
 	assignments *service.AssignmentService
+	submissions *service.SubmissionService
 }
 
 // New 构造服务；ttl 为会话有效期。
@@ -42,6 +43,7 @@ func New(st *store.Store, clk *clock.Clock, ttl time.Duration) *Server {
 		sessions:    session.NewManager(clk, ttl),
 		tpl:         tpl,
 		assignments: service.NewAssignmentService(st, clk),
+		submissions: service.NewSubmissionService(st, clk),
 	}
 }
 
@@ -63,6 +65,7 @@ func (s *Server) Handler() http.Handler {
 	mux.Handle("GET /api/assignments/{id}", s.requireAuth(http.HandlerFunc(s.handleAssignmentGet)))
 	mux.Handle("GET /api/students/{id}", s.requireAuth(http.HandlerFunc(s.handleStudentGet)))
 	mux.Handle("POST /api/assignments/{id}/submissions", s.requireAuth(http.HandlerFunc(s.handleSubmissionPost)))
+	mux.Handle("GET /api/assignments/{id}/submissions", s.requireAuth(http.HandlerFunc(s.handleSubmissionList)))
 	mux.Handle("POST /api/assignments/{id}/reviews", s.requireAuth(http.HandlerFunc(s.handleReviewPost)))
 	mux.Handle("POST /api/assignments/{id}/extensions", s.requireAuth(http.HandlerFunc(s.handleExtensionPost)))
 	mux.Handle("POST /api/assignments/{id}/reminders", s.requireAuth(http.HandlerFunc(s.handleReminderPost)))

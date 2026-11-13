@@ -109,20 +109,8 @@ func (s *Server) handleStudentGet(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// 以下四个写接口在 D-03 只做权限校验，业务逻辑由后续任务补齐；
+// 以下三个写接口在 D-03 只做权限校验，业务逻辑由后续任务补齐；
 // 通过权限后返回 501，便于权限矩阵测试与页面联调区分"无权"与"未实现"。
-
-func (s *Server) handleSubmissionPost(w http.ResponseWriter, r *http.Request) {
-	_, u, ok := s.assignmentFor(w, r)
-	if !ok {
-		return
-	}
-	if !Allow(u.Role, ActionSubmit, true, true) {
-		writeAPIError(w, http.StatusForbidden, "forbidden_role", "只有本班学生本人可以提交作业")
-		return
-	}
-	writeAPIError(w, http.StatusNotImplemented, "not_implemented", "提交能力将在 D-05 实现，当前仅完成权限校验")
-}
 
 func (s *Server) handleReviewPost(w http.ResponseWriter, r *http.Request) {
 	_, u, ok := s.assignmentFor(w, r)

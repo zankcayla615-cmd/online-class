@@ -32,6 +32,37 @@ const (
 	StatePassed       = "PASSED"
 )
 
+// Enrollment 是"某学生在某作业上的状态行"，也是并发控制锚点。
+type Enrollment struct {
+	AssignmentID     string
+	StudentID        string
+	State            string
+	StateVersion     int
+	CurrentVersionNo int
+}
+
+// Submission 是一个提交版本（只追加，不更新）。
+type Submission struct {
+	ID           string
+	AssignmentID string
+	StudentID    string
+	VersionNo    int
+	Content      string
+	ContentHash  string
+	RequestID    string
+	CreatedAt    time.Time
+}
+
+// Extension 是补交授权：每个学生每份作业最多一条。
+type Extension struct {
+	AssignmentID string
+	StudentID    string
+	DeadlineAt   time.Time
+	Reason       string
+	GrantedBy    string
+	GrantedAt    time.Time
+}
+
 // User 是账号。
 type User struct {
 	ID           string

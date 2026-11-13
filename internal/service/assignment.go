@@ -132,17 +132,7 @@ func (s *AssignmentService) Publish(ctx context.Context, actor store.User, id st
 
 // loadForActor 读取作业并做班级隔离：跨班与不存在统一 404。
 func (s *AssignmentService) loadForActor(ctx context.Context, actor store.User, id string) (store.Assignment, error) {
-	a, err := s.store.GetAssignment(ctx, id)
-	if err != nil {
-		if errors.Is(err, store.ErrNotFound) {
-			return store.Assignment{}, apperr.NotFound("作业不存在")
-		}
-		return store.Assignment{}, err
-	}
-	if a.ClassID != actor.ClassID {
-		return store.Assignment{}, apperr.NotFound("作业不存在")
-	}
-	return a, nil
+	return loadAssignmentFor(ctx, s.store, actor, id)
 }
 
 func (s *AssignmentService) validate(in AssignmentInput) (string, string, time.Time, error) {
