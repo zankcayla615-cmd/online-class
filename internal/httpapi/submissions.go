@@ -13,8 +13,9 @@ import (
 
 // submissionPayload 是学生提交的请求体。
 type submissionPayload struct {
-	Content   string `json:"content"`
-	RequestID string `json:"request_id"`
+	Content     string `json:"content"`
+	RequestID   string `json:"request_id"`
+	BaseVersion *int   `json:"base_version"`
 }
 
 func submissionView(sub store.Submission) map[string]any {
@@ -50,8 +51,9 @@ func (s *Server) handleSubmissionPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	res, err := s.submissions.Submit(r.Context(), u, r.PathValue("id"), service.SubmitInput{
-		Content:   p.Content,
-		RequestID: p.RequestID,
+		Content:     p.Content,
+		RequestID:   p.RequestID,
+		BaseVersion: p.BaseVersion,
 	})
 	if err != nil {
 		writeServiceError(w, err)
@@ -63,7 +65,13 @@ func (s *Server) handleSubmissionPost(w http.ResponseWriter, r *http.Request) {
 	body["current_version_no"] = res.Enrollment.CurrentVersionNo
 	body["effective_deadline"] = res.EffectiveDeadline.Format(time.RFC3339)
 	body["extension_applied"] = res.ExtensionApplied
-	writeJSON(w, http.StatusCreated, body)
+	body["replayed"] = res.Replayed
+	// 重放不产生新资源，按 200 返回；新建版本仍是 201。
+	status := http.StatusCreated
+	if res.Replayed {
+		status = http.StatusOK
+	}
+	writeJSON(w, status, body)
 }
 
 // handleSubmissionList 返回某学生在该作业上的全部版本（含历史版本）。

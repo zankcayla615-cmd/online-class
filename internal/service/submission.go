@@ -36,6 +36,9 @@ func NewSubmissionService(st *store.Store, clk *clock.Clock) *SubmissionService 
 type SubmitInput struct {
 	Content   string
 	RequestID string
+	// BaseVersion 是客户端"提交时看到的当前版本号"，首次提交传 0。
+	// 为 nil 表示请求未携带，按 400 处理：不能靠默认值蒙混成"基于最新版"。
+	BaseVersion *int
 }
 
 // SubmitResult 是提交成功后的返回信息。
@@ -44,6 +47,8 @@ type SubmitResult struct {
 	Enrollment        store.Enrollment
 	EffectiveDeadline time.Time
 	ExtensionApplied  bool
+	// Replayed 为 true 表示命中幂等重放：没有新增版本，返回的是首次结果。
+	Replayed bool
 }
 
 // SubmissionHistory 是某学生在一份作业上的版本历史。
@@ -65,7 +70,10 @@ type SubmissionHistory struct {
 //  3. 已通过（PASSED）不得再提交；
 //  4. 超过有效截止时间（含个人补交授权）不得提交；恰好等于截止时刻仍允许，
 //     即判定条件为 now > deadline；
-//  5. request_id 必填且唯一，重复请求号在 D-05 先拒绝（D-06 改为幂等重放）。
+//  5. 幂等：同 request_id + 同内容 → 返回首次版本（Replayed=true），不新增；
+//     同 request_id + 异内容 → 409 idempotency_conflict；
+//  6. 旧请求保护：base_version 与服务端当前版本不一致 → 409 stale_version，
+//     不写入任何内容（旧页面无法覆盖新提交）。
 func (s *SubmissionService) Submit(ctx context.Context, actor store.User, assignmentID string, in SubmitInput) (SubmitResult, error) {
 	if actor.Role != store.RoleStudent {
 		return SubmitResult{}, apperr.Forbidden("只有学生可以提交作业")
@@ -90,10 +98,11 @@ func (s *SubmissionService) Submit(ctx context.Context, actor store.User, assign
 			WithDetails(map[string]any{"state": enr.State})
 	}
 
-	content, requestID, err := validateSubmission(in)
+	content, requestID, baseVersion, err := validateSubmission(in)
 	if err != nil {
 		return SubmitResult{}, err
 	}
+	contentHash := hashContent(content)
 
 	deadline, extended, err := s.effectiveDeadline(ctx, a, actor.ID)
 	if err != nil {
@@ -108,11 +117,21 @@ func (s *SubmissionService) Submit(ctx context.Context, actor store.User, assign
 			})
 	}
 
+	// 幂等重放：同一 request_id 已经成功过，就不再看 base_version（首次结果已生效），
+	// 同内容返回首次版本，异内容明确拒绝，避免"同号改内容"悄悄覆盖。
 	if existing, err := s.store.GetSubmissionByRequestID(ctx, assignmentID, actor.ID, requestID); err == nil {
-		return SubmitResult{}, apperr.Conflict("duplicate_request_id", "该请求号已提交过，请勿重复提交").
-			WithDetails(map[string]any{"version_no": existing.VersionNo})
+		return replayResult(existing, contentHash, enr, deadline, extended)
 	} else if !errors.Is(err, store.ErrNotFound) {
 		return SubmitResult{}, err
+	}
+
+	// 旧请求保护：客户端看到的版本必须等于服务端当前版本，否则说明页面过期。
+	if baseVersion != enr.CurrentVersionNo {
+		return SubmitResult{}, apperr.Conflict("stale_version", "提交基于旧版本，请刷新后重试").
+			WithDetails(map[string]any{
+				"base_version":       baseVersion,
+				"current_version_no": enr.CurrentVersionNo,
+			})
 	}
 
 	subID, err := newSubmissionID()
@@ -125,7 +144,7 @@ func (s *SubmissionService) Submit(ctx context.Context, actor store.User, assign
 		StudentID:    actor.ID,
 		VersionNo:    enr.CurrentVersionNo + 1,
 		Content:      content,
-		ContentHash:  hashContent(content),
+		ContentHash:  contentHash,
 		RequestID:    requestID,
 		CreatedAt:    now,
 	}
@@ -140,6 +159,11 @@ func (s *SubmissionService) Submit(ctx context.Context, actor store.User, assign
 	if err != nil {
 		switch {
 		case errors.Is(err, store.ErrConflict), store.IsUniqueViolation(err):
+			// 并发兜底：可能是"同一 request_id 已被另一个连接写入"，
+			// 再查一次以兑现幂等语义；否则说明版本已被人推进，让客户端刷新。
+			if existing, getErr := s.store.GetSubmissionByRequestID(ctx, assignmentID, actor.ID, requestID); getErr == nil {
+				return replayResult(existing, contentHash, enr, deadline, extended)
+			}
 			return SubmitResult{}, apperr.Conflict("version_conflict", "提交状态已被并发修改，请刷新后重试")
 		default:
 			return SubmitResult{}, err
@@ -238,20 +262,39 @@ func (s *SubmissionService) effectiveDeadline(ctx context.Context, a store.Assig
 	return a.EffectiveDeadline(), false, nil
 }
 
-func validateSubmission(in SubmitInput) (string, string, error) {
+// replayResult 处理"request_id 已存在"：同内容视为重放，异内容视为冲突。
+func replayResult(existing store.Submission, contentHash string, enr store.Enrollment, deadline time.Time, extended bool) (SubmitResult, error) {
+	if existing.ContentHash != contentHash {
+		return SubmitResult{}, apperr.Conflict("idempotency_conflict", "同一个 request_id 提交了不同内容").
+			WithDetails(map[string]any{"existing_version_no": existing.VersionNo})
+	}
+	return SubmitResult{
+		Version:           existing,
+		Enrollment:        enr,
+		EffectiveDeadline: deadline,
+		ExtensionApplied:  extended,
+		Replayed:          true,
+	}, nil
+}
+
+func validateSubmission(in SubmitInput) (string, string, int, error) {
 	content := strings.TrimSpace(in.Content)
 	requestID := strings.TrimSpace(in.RequestID)
 	switch {
 	case content == "":
-		return "", "", apperr.Invalid("提交内容不能为空")
+		return "", "", 0, apperr.Invalid("提交内容不能为空")
 	case utf8.RuneCountInString(content) > maxContentRunes:
-		return "", "", apperr.Invalid("提交内容不能超过 5000 个字符")
+		return "", "", 0, apperr.Invalid("提交内容不能超过 5000 个字符")
 	case requestID == "":
-		return "", "", apperr.Invalid("request_id 不能为空：用于识别重复提交")
+		return "", "", 0, apperr.Invalid("request_id 不能为空：用于识别重复提交")
 	case len(requestID) > maxRequestIDLen:
-		return "", "", apperr.Invalid("request_id 不能超过 64 个字符")
+		return "", "", 0, apperr.Invalid("request_id 不能超过 64 个字符")
+	case in.BaseVersion == nil:
+		return "", "", 0, apperr.Invalid("base_version 不能为空：首次提交传 0，更新时传当前版本号")
+	case *in.BaseVersion < 0:
+		return "", "", 0, apperr.Invalid("base_version 不能为负数")
 	}
-	return content, requestID, nil
+	return content, requestID, *in.BaseVersion, nil
 }
 
 func hashContent(content string) string {

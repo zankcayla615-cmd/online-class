@@ -48,7 +48,11 @@ func (e *svcEnv) seedPublished(t *testing.T, id string, deadline time.Time) {
 }
 
 func submitInput(content, requestID string) service.SubmitInput {
-	return service.SubmitInput{Content: content, RequestID: requestID}
+	return submitAt(content, requestID, 0)
+}
+
+func submitAt(content, requestID string, baseVersion int) service.SubmitInput {
+	return service.SubmitInput{Content: content, RequestID: requestID, BaseVersion: &baseVersion}
 }
 
 func TestSubmitCreatesFirstVersion(t *testing.T) {
@@ -103,7 +107,7 @@ func TestResubmitCreatesSecondVersionAndKeepsHistory(t *testing.T) {
 	if _, err := svc.Submit(ctx, s01, a.ID, submitInput("第一版", "req-1")); err != nil {
 		t.Fatalf("首次提交失败: %v", err)
 	}
-	res, err := svc.Submit(ctx, s01, a.ID, submitInput("第二版", "req-2"))
+	res, err := svc.Submit(ctx, s01, a.ID, submitAt("第二版", "req-2", 1))
 	if err != nil {
 		t.Fatalf("未批阅时更新应成功，实际 %v", err)
 	}
@@ -148,7 +152,7 @@ func TestSubmitAfterReturnedAllowed(t *testing.T) {
 		t.Fatalf("构造退回状态失败: %v", err)
 	}
 
-	res, err := svc.Submit(ctx, s01, a.ID, submitInput("修改后重交", "req-2"))
+	res, err := svc.Submit(ctx, s01, a.ID, submitAt("修改后重交", "req-2", 1))
 	if err != nil {
 		t.Fatalf("退回后应允许重新提交，实际 %v", err)
 	}
@@ -230,6 +234,8 @@ func TestSubmitValidation(t *testing.T) {
 		{"内容超长", submitInput(strings.Repeat("字", 5001), "req-1")},
 		{"缺少请求号", submitInput("内容", "")},
 		{"请求号超长", submitInput("内容", strings.Repeat("r", 65))},
+		{"缺少基础版本", service.SubmitInput{Content: "内容", RequestID: "req-1"}},
+		{"基础版本为负", submitAt("内容", "req-1", -1)},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -250,16 +256,28 @@ func TestSubmitDuplicateRequestID(t *testing.T) {
 	if _, err := svc.Submit(ctx, s01, a.ID, submitInput("第一版", "req-1")); err != nil {
 		t.Fatalf("首次提交失败: %v", err)
 	}
-	_, err := svc.Submit(ctx, s01, a.ID, submitInput("同一请求号再发", "req-1"))
-	if err == nil || code(t, err) != "duplicate_request_id" {
-		t.Fatalf("重复请求号应返回 duplicate_request_id，实际 %v", err)
+
+	// 同请求号 + 同内容 → 幂等重放，不新增版本
+	replay, err := svc.Submit(ctx, s01, a.ID, submitInput("第一版", "req-1"))
+	if err != nil {
+		t.Fatalf("同内容重放应成功，实际 %v", err)
 	}
+	if !replay.Replayed || replay.Version.VersionNo != 1 {
+		t.Fatalf("重放应返回首次版本且标记 Replayed，实际 %+v", replay)
+	}
+
+	// 同请求号 + 异内容 → 409 idempotency_conflict
+	_, err = svc.Submit(ctx, s01, a.ID, submitInput("同一请求号改内容", "req-1"))
+	if err == nil || code(t, err) != "idempotency_conflict" {
+		t.Fatalf("同号异内容应返回 idempotency_conflict，实际 %v", err)
+	}
+
 	versions, err := e.st.ListSubmissions(ctx, a.ID, "S01")
 	if err != nil {
 		t.Fatalf("查询版本失败: %v", err)
 	}
 	if len(versions) != 1 {
-		t.Fatalf("重复请求不得产生新版本，实际 %d", len(versions))
+		t.Fatalf("重放不得产生新版本，实际 %d", len(versions))
 	}
 }
 
