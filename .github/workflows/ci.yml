@@ -1,0 +1,93 @@
+name: ci
+
+on:
+  push:
+    branches: [main, "dev/**"]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: 测试与覆盖率门禁
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: gofmt
+        run: |
+          unformatted="$(gofmt -l .)"
+          if [ -n "$unformatted" ]; then
+            echo "以下文件未格式化："
+            echo "$unformatted"
+            exit 1
+          fi
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: 测试（含竞态检测）
+        run: go test ./... -count=1 -race
+
+      - name: 覆盖率门禁（整体与核心包 ≥85%）
+        run: bash scripts/check-coverage.sh
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage
+          path: |
+            coverage.out
+            coverage_*.out
+          if-no-files-found: ignore
+
+  smoke:
+    name: 业务冒烟
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: 发布→提交→批阅→汇总
+        run: bash scripts/smoke.sh
+
+  image:
+    name: 镜像构建与健康检查（部署演练）
+    runs-on: ubuntu-latest
+    needs: smoke
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 构建镜像
+        run: docker build -t online-class:ci .
+
+      - name: 启动容器并探活
+        run: |
+          docker run -d --name online-class -p 18081:8080 \
+            -e SEED=1 -e TEACHING_CLOCK_OFFSET=0 online-class:ci
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:18081/healthz; then ok=1; break; fi
+            sleep 1
+          done
+          test "${ok:-0}" = "1"
+          curl -fsS http://127.0.0.1:18081/login >/dev/null
+
+      - name: 失败时输出容器日志
+        if: failure()
+        run: docker logs online-class || true
+
+      - name: 清理
+        if: always()
+        run: docker rm -f online-class || true

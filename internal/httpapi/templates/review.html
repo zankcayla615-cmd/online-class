@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>{{template "head" "批阅台"}}</head>
+<body>
+{{template "top" .}}
+<main>
+  {{if .Base.OK}}<div class="flash">{{.Base.OK}}</div>{{end}}
+
+  <section class="card">
+    <h1>批阅台 · {{.Title}}</h1>
+    <div class="tagline">
+      <span class="chip">待批阅 {{.Pending}}</span>
+      <span class="chip state-PASSED">已通过 {{.Done}}</span>
+      <span class="muted">作业截止 {{.Deadline}}</span>
+      <a class="btn small" href="/assignments/{{.Assignment.ID}}/summary">查看班级汇总</a>
+    </div>
+    <p class="sub">批阅绑定到具体版本：学生重新提交后，旧版本无法再批（会提示 stale_version）。</p>
+  </section>
+
+  <section class="card">
+    <h2>学生提交</h2>
+    <table>
+      <thead><tr><th style="width:150px">学生</th><th>当前版本</th><th>状态</th><th>批阅结论</th></tr></thead>
+      <tbody>
+        {{range .Rows}}
+        <tr>
+          <td>
+            <b>{{.Name}}</b><div class="muted">{{.StudentID}}</div>
+            {{if .Overdue}}<span class="chip warn">逾期未交</span>{{end}}
+            {{if .Extension}}<span class="chip">已批补交</span>{{end}}
+          </td>
+          <td>
+            {{if .VersionID}}
+              <div class="muted">v{{.VersionNo}} · {{.SubmittedAt}}</div>
+              <div class="answer" style="margin-top:8px">{{.Content}}</div>
+            {{else}}
+              <span class="muted">尚未提交</span>
+            {{end}}
+          </td>
+          <td><span class="chip state-{{.State}}">{{.StateLabel}}</span></td>
+          <td>
+            {{if .Decision}}
+              <span class="chip {{if eq .Decision "通过"}}state-PASSED{{else}}state-RETURNED{{end}}">{{.Decision}}</span>
+              <div class="muted" style="margin-top:6px">{{.Feedback}}</div>
+              <div class="muted">{{.DecisionAt}}</div>
+            {{else}}
+              {{if .CanReview}}
+              <form class="form" method="post" action="/assignments/{{$.Assignment.ID}}/review">
+                <input type="hidden" name="version_id" value="{{.VersionID}}">
+                <input type="hidden" name="request_id" value="{{.RequestID}}">
+                <label>结论
+                  <select name="decision" required>
+                    <option value="pass">通过（首次通过发 10 分）</option>
+                    <option value="reject">退回（需写清原因）</option>
+                  </select>
+                </label>
+                <label>反馈
+                  <textarea name="feedback" rows="3" maxlength="1000" placeholder="通过可留空；退回应说明要改什么"></textarea>
+                </label>
+                <button class="btn primary small" type="submit">保存批阅</button>
+              </form>
+              {{else}}
+                <span class="muted">当前状态不可批阅</span>
+              {{end}}
+            {{end}}
+          </td>
+        </tr>
+        {{else}}
+        <tr><td colspan="4" class="empty">还没有学生名单。</td></tr>
+        {{end}}
+      </tbody>
+    </table>
+  </section>
+
+  <section class="card">
+    <h2>批准补交（按人一次性）</h2>
+    {{if .Extendable}}
+    <form class="form" method="post" action="/assignments/{{.Assignment.ID}}/extension">
+      <div class="row2">
+        <label>学生
+          <select name="student_id" required>
+            {{range .Extendable}}
+            <option value="{{.StudentID}}">{{.Name}}（{{.StudentID}} · {{.StateLabel}}）</option>
+            {{end}}
+          </select>
+        </label>
+        <label>新的截止时间
+          <input type="datetime-local" name="deadline_at" required value="{{.DefaultTime}}">
+        </label>
+      </div>
+      <label>原因（5~200 字）
+        <textarea name="reason" rows="2" required maxlength="200" placeholder="例如：因病住院，凭证明补交"></textarea>
+      </label>
+      <div class="actions">
+        <button class="btn primary" type="submit">批准补交</button>
+        <span class="muted">只影响该生；已通过或已批过补交的学生不在列表中。</span>
+      </div>
+    </form>
+    {{else}}
+    <p class="empty">当前没有可批准补交的学生（已通过或已批过补交）。</p>
+    {{end}}
+  </section>
+</main>
+</body>
+</html>

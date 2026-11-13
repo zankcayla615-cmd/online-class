@@ -1,0 +1,9 @@
+?   	onlineclass/cmd/server	[no test files]
+ok  	onlineclass/internal/apperr	1.756s
+ok  	onlineclass/internal/auth	2.436s
+ok  	onlineclass/internal/clock	1.660s
+ok  	onlineclass/internal/config	1.723s
+ok  	onlineclass/internal/httpapi	75.021s
+ok  	onlineclass/internal/service	65.759s
+ok  	onlineclass/internal/session	1.431s
+ok  	onlineclass/internal/store	44.494s

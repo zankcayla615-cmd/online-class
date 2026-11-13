@@ -1,0 +1,42 @@
+=== RUN   TestConcurrentSubmitVsReview
+--- PASS: TestConcurrentSubmitVsReview (1.37s)
+=== RUN   TestConcurrentPassAwardsOnce
+--- PASS: TestConcurrentPassAwardsOnce (1.27s)
+=== RUN   TestConcurrentSameRequestIDReplays
+--- PASS: TestConcurrentSameRequestIDReplays (1.25s)
+=== RUN   TestConcurrentDifferentRequestsNoFork
+--- PASS: TestConcurrentDifferentRequestsNoFork (1.28s)
+=== RUN   TestConcurrentSubmitVsReview
+--- PASS: TestConcurrentSubmitVsReview (1.40s)
+=== RUN   TestConcurrentPassAwardsOnce
+--- PASS: TestConcurrentPassAwardsOnce (1.23s)
+=== RUN   TestConcurrentSameRequestIDReplays
+--- PASS: TestConcurrentSameRequestIDReplays (1.24s)
+=== RUN   TestConcurrentDifferentRequestsNoFork
+--- PASS: TestConcurrentDifferentRequestsNoFork (1.23s)
+=== RUN   TestConcurrentSubmitVsReview
+--- PASS: TestConcurrentSubmitVsReview (1.42s)
+=== RUN   TestConcurrentPassAwardsOnce
+--- PASS: TestConcurrentPassAwardsOnce (1.23s)
+=== RUN   TestConcurrentSameRequestIDReplays
+--- PASS: TestConcurrentSameRequestIDReplays (1.24s)
+=== RUN   TestConcurrentDifferentRequestsNoFork
+--- PASS: TestConcurrentDifferentRequestsNoFork (1.25s)
+=== RUN   TestConcurrentSubmitVsReview
+--- PASS: TestConcurrentSubmitVsReview (1.41s)
+=== RUN   TestConcurrentPassAwardsOnce
+--- PASS: TestConcurrentPassAwardsOnce (1.25s)
+=== RUN   TestConcurrentSameRequestIDReplays
+--- PASS: TestConcurrentSameRequestIDReplays (1.29s)
+=== RUN   TestConcurrentDifferentRequestsNoFork
+--- PASS: TestConcurrentDifferentRequestsNoFork (1.27s)
+=== RUN   TestConcurrentSubmitVsReview
+--- PASS: TestConcurrentSubmitVsReview (1.41s)
+=== RUN   TestConcurrentPassAwardsOnce
+--- PASS: TestConcurrentPassAwardsOnce (1.31s)
+=== RUN   TestConcurrentSameRequestIDReplays
+--- PASS: TestConcurrentSameRequestIDReplays (1.36s)
+=== RUN   TestConcurrentDifferentRequestsNoFork
+--- PASS: TestConcurrentDifferentRequestsNoFork (1.28s)
+PASS
+ok  	onlineclass/internal/service	29.376s

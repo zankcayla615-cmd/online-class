@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>{{template "head" "操作未完成"}}</head>
+<body>
+{{template "top" .}}
+<main>
+  <section class="card">
+    <h1>操作未完成</h1>
+    <p class="sub">服务端按统一规则拒绝了这次请求，页面与接口返回同一错误码。</p>
+    <div class="errbox">
+      <div><b>{{.Message}}</b></div>
+      <div style="margin-top:8px">错误码：<code>{{.Code}}</code></div>
+    </div>
+    <div class="actions">
+      <a class="btn primary" href="{{.Back}}">返回上一页</a>
+      <a class="btn" href="/assignments">作业列表</a>
+    </div>
+  </section>
+</main>
+</body>
+</html>

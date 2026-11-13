@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>{{template "head" "班级汇总"}}</head>
+<body>
+{{template "top" .}}
+<main>
+  {{if .Base.OK}}<div class="flash">{{.Base.OK}}</div>{{end}}
+
+  <section class="card">
+    <h1>班级汇总 · {{.Title}}</h1>
+    <div class="tagline">
+      <span class="muted">截止 {{.Deadline}}</span>
+      <span class="chip">完成率 {{.CompletionRate}}</span>
+      {{if .ReadOnly}}<span class="chip">只读统计（助教视图）</span>{{end}}
+      {{if not .ReadOnly}}<a class="btn small" href="/assignments/{{.Assignment.ID}}/review">返回批阅台</a>{{end}}
+    </div>
+    <div class="grid">
+      <div class="stat"><span>未提交</span><b>{{index .Counts "not_submitted"}}</b></div>
+      <div class="stat"><span>待批阅</span><b>{{index .Counts "submitted"}}</b></div>
+      <div class="stat"><span>已退回</span><b>{{index .Counts "returned"}}</b></div>
+      <div class="stat"><span>已通过</span><b>{{index .Counts "passed"}}</b></div>
+      <div class="stat"><span>班级人数</span><b>{{index .Counts "total"}}</b></div>
+    </div>
+    {{if .ReadOnly}}
+    <p class="sub" style="margin-top:14px">助教只读统计：不含学生明细、奖励流水与时间线；需要跟进请回到看板记录催交。</p>
+    {{end}}
+  </section>
+
+  {{if not .ReadOnly}}
+  <section class="card">
+    <h2>学生最终状态</h2>
+    <table>
+      <thead><tr><th>学生</th><th>最终状态</th><th>版本</th><th>首次提交</th><th>最近提交</th><th>积分</th><th>最近结论</th></tr></thead>
+      <tbody>
+        {{range .Students}}
+        <tr>
+          <td><b>{{.Name}}</b><div class="muted">{{.StudentID}}</div></td>
+          <td>
+            <span class="chip state-{{.State}}">{{.StateLabel}}</span>
+            {{if .Overdue}}<span class="chip warn">逾期未交</span>{{end}}
+            {{if .Extension}}<span class="chip">已批补交（{{.Extension.DeadlineAt.Format "01-02 15:04"}}）</span>{{end}}
+          </td>
+          <td>v{{.VersionNo}}<div class="muted">共 {{.VersionCount}} 版</div></td>
+          <td>{{if .FirstSubmit}}{{.FirstSubmit}}{{else}}—{{end}}</td>
+          <td>{{if .LastSubmit}}{{.LastSubmit}}{{else}}—{{end}}</td>
+          <td>{{.Points}}</td>
+          <td>
+            {{if .Decision}}
+              <span class="chip {{if eq .Decision "通过"}}state-PASSED{{else}}state-RETURNED{{end}}">{{.Decision}}</span>
+              <div class="muted" style="margin-top:4px">{{.Feedback}}</div>
+            {{else}}<span class="muted">—</span>{{end}}
+          </td>
+        </tr>
+        {{else}}
+        <tr><td colspan="7" class="empty">还没有学生名单。</td></tr>
+        {{end}}
+      </tbody>
+    </table>
+  </section>
+
+  <section class="card">
+    <h2>奖励流水（合计 {{.TotalPoints}} 分）</h2>
+    <table>
+      <thead><tr><th>时间</th><th>学生</th><th>事项</th><th>分值</th></tr></thead>
+      <tbody>
+        {{range .Points}}
+        <tr>
+          <td>{{.CreatedAt.Format "2006-01-02 15:04"}}</td>
+          <td>{{.StudentID}}</td>
+          <td>{{if eq .Reason "first_pass"}}首次通过（{{.AssignmentID}}）{{else}}{{.Reason}}{{end}}</td>
+          <td>+{{.Points}}</td>
+        </tr>
+        {{else}}
+        <tr><td colspan="4" class="empty">还没有发奖记录。</td></tr>
+        {{end}}
+      </tbody>
+    </table>
+  </section>
+
+  <section class="card">
+    <h2>时间线（首次提交 → 最终结果）</h2>
+    <table>
+      <thead><tr><th style="width:130px">时间</th><th style="width:90px">学生</th><th style="width:70px">事件</th><th>变化</th><th>说明</th><th style="width:60px">操作者</th></tr></thead>
+      <tbody>
+        {{range .Timeline}}
+        <tr>
+          <td>{{.Time}}</td>
+          <td>{{.StudentID}}</td>
+          <td>{{.Type}}</td>
+          <td>{{if .Transition}}{{.Transition}}{{else}}—{{end}}</td>
+          <td>{{.Detail}}</td>
+          <td class="muted">{{.ActorRole}}</td>
+        </tr>
+        {{else}}
+        <tr><td colspan="6" class="empty">还没有事件记录。</td></tr>
+        {{end}}
+      </tbody>
+    </table>
+  </section>
+  {{end}}
+</main>
+</body>
+</html>

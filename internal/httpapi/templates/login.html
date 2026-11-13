@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>登录 · 课下作业平台</title>
+  <style>
+    :root { color-scheme: light; }
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center;
+      font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+      background: #f4f6fa; color: #1f2430; }
+    .card { width: 340px; background: #fff; border-radius: 14px; padding: 28px 26px;
+      box-shadow: 0 8px 30px rgba(23, 42, 84, .10); }
+    h1 { font-size: 20px; margin: 0 0 4px; }
+    .sub { margin: 0 0 18px; color: #6b7280; font-size: 12px; }
+    label { display: block; font-size: 13px; color: #374151; margin-bottom: 14px; }
+    input { width: 100%; box-sizing: border-box; margin-top: 6px; padding: 10px 12px;
+      border: 1px solid #d5dae6; border-radius: 8px; font-size: 14px; }
+    input:focus { outline: 2px solid #c7d7ff; border-color: #5b7cfa; }
+    button { width: 100%; padding: 11px; border: 0; border-radius: 8px; background: #2f5bea;
+      color: #fff; font-size: 15px; cursor: pointer; }
+    button:hover { background: #2449c4; }
+    .err { background: #fdecec; color: #b42318; border-radius: 8px; padding: 9px 12px;
+      font-size: 13px; margin: 0 0 14px; }
+    .hint { color: #6b7280; font-size: 12px; line-height: 1.7; margin: 16px 0 0; }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>课下作业平台</h1>
+    <p class="sub">题目 03 · 布置 / 提交 / 批阅 / 补交 / 积分</p>
+    {{if .Error}}<p class="err">{{.Error}}</p>{{end}}
+    <form method="post" action="/login">
+      <label>账号
+        <input name="user_id" value="{{.UserID}}" placeholder="T01 / A01 / S01 / X01" autocomplete="username" required>
+      </label>
+      <label>口令
+        <input name="password" type="password" autocomplete="current-password" required>
+      </label>
+      <button type="submit">登录</button>
+    </form>
+    <p class="hint">
+      演示账号：T01 教师、A01 助教、S01~S05 学生（P01）、X01 外班学生（P02）<br>
+      统一口令 demo1234（仅演示环境，提交材料中已脱敏）
+    </p>
+  </main>
+</body>
+</html>

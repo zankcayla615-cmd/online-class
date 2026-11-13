@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>{{template "head" "作业与发布"}}</head>
+<body>
+{{template "top" .}}
+<main>
+  {{if .Base.OK}}<div class="flash">{{.Base.OK}}</div>{{end}}
+
+  <section class="card">
+    <h1>作业列表</h1>
+    <p class="sub">教师可创建草稿并发布；学生与助教只看已发布作业（草稿不可见）。</p>
+    <table>
+      <thead>
+        <tr><th>标题</th><th>状态</th><th>截止时间</th><th>发布时间</th><th>操作</th></tr>
+      </thead>
+      <tbody>
+        {{range .Assignments}}
+        <tr>
+          <td><a href="/assignments/{{.ID}}">{{.Title}}</a><div class="muted">{{.ID}}</div></td>
+          <td><span class="chip {{if .IsDraft}}draft{{else}}published{{end}}">{{.StateLabel}}</span></td>
+          <td>{{.Deadline}}</td>
+          <td>{{if .PublishedAt}}{{.PublishedAt}}{{else}}—{{end}}</td>
+          <td>
+            <div class="actions">
+              {{if .IsDraft}}
+                <a class="btn small" href="/assignments?edit={{.ID}}">编辑</a>
+                <form class="inline" method="post" action="/assignments/{{.ID}}/publish">
+                  <button class="btn small primary" type="submit">发布</button>
+                </form>
+              {{else}}
+                {{if eq $.Base.User.Role "teacher"}}
+                  <a class="btn small" href="/assignments/{{.ID}}/review">批阅台</a>
+                  <a class="btn small" href="/assignments/{{.ID}}/summary">汇总</a>
+                {{end}}
+                <a class="btn small" href="/assignments/{{.ID}}">查看</a>
+              {{end}}
+            </div>
+          </td>
+        </tr>
+        {{else}}
+        <tr><td colspan="5" class="empty">暂无作业{{if $.IsTeacher}}，用下方表单创建第一份{{end}}。</td></tr>
+        {{end}}
+      </tbody>
+    </table>
+  </section>
+
+  {{if .IsTeacher}}
+  <section class="card">
+    <h2>{{if .Editing}}编辑草稿{{else}}新建作业草稿{{end}}</h2>
+    {{if .Editing}}<p class="sub">正在编辑 <code>{{.EditID}}</code>；发布后标题、要求与截止时间将锁定。</p>{{end}}
+    <form class="form" method="post" action="{{.FormAction}}">
+      <label>标题
+        <input name="title" required maxlength="100" value="{{.EditTitle}}" placeholder="例如：第 4 章课后练习">
+      </label>
+      <label>提交要求
+        <textarea name="requirement" rows="5" required maxlength="2000" placeholder="写清题目、格式与提交方式">{{.EditRequirement}}</textarea>
+      </label>
+      <label>截止时间
+        <input type="datetime-local" name="deadline_at" required
+               value="{{if .Editing}}{{.EditDeadline}}{{else}}{{.DefaultTime}}{{end}}">
+      </label>
+      <div class="actions">
+        <button class="btn primary" type="submit">{{if .Editing}}保存草稿{{else}}创建草稿{{end}}</button>
+        {{if .Editing}}<a class="btn" href="/assignments">取消编辑</a>{{end}}
+        <span class="muted">截止时间必须晚于当前业务时间；发布时生成快照，之后不再跟随草稿变化。</span>
+      </div>
+    </form>
+  </section>
+  {{end}}
+</main>
+</body>
+</html>

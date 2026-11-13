@@ -1,0 +1,104 @@
+﻿testing: warning: no tests to run
+PASS
+ok  	onlineclass/internal/apperr	1.482s [no tests to run]
+testing: warning: no tests to run
+PASS
+ok  	onlineclass/internal/auth	0.788s [no tests to run]
+testing: warning: no tests to run
+PASS
+ok  	onlineclass/internal/clock	1.249s [no tests to run]
+testing: warning: no tests to run
+PASS
+ok  	onlineclass/internal/config	1.013s [no tests to run]
+=== RUN   TestPublishPermissionAndRepeatOverHTTP
+--- PASS: TestPublishPermissionAndRepeatOverHTTP (0.18s)
+=== RUN   TestGrantExtensionPermissionsAndValidationOverHTTP
+--- PASS: TestGrantExtensionPermissionsAndValidationOverHTTP (0.17s)
+=== RUN   TestPageRoleRouting
+--- PASS: TestPageRoleRouting (0.16s)
+=== RUN   TestPageRejectsCrossClass
+--- PASS: TestPageRejectsCrossClass (0.13s)
+=== RUN   TestReviewPermissionsAndValidationOverHTTP
+--- PASS: TestReviewPermissionsAndValidationOverHTTP (0.16s)
+=== RUN   TestWriteEndpointRoleMatrix
+=== RUN   TestWriteEndpointRoleMatrix/教师提交作业
+=== RUN   TestWriteEndpointRoleMatrix/助教提交作业
+=== RUN   TestWriteEndpointRoleMatrix/教师批阅空请求体
+=== RUN   TestWriteEndpointRoleMatrix/助教批阅
+=== RUN   TestWriteEndpointRoleMatrix/学生批阅
+=== RUN   TestWriteEndpointRoleMatrix/外班教师批阅本班作业
+=== RUN   TestWriteEndpointRoleMatrix/教师批准补交空请求体
+=== RUN   TestWriteEndpointRoleMatrix/助教批准补交
+=== RUN   TestWriteEndpointRoleMatrix/学生批准补交
+=== RUN   TestWriteEndpointRoleMatrix/助教记录催交空请求体
+=== RUN   TestWriteEndpointRoleMatrix/教师记录催交
+=== RUN   TestWriteEndpointRoleMatrix/学生记录催交
+=== RUN   TestWriteEndpointRoleMatrix/外班学生提交本班作业
+--- PASS: TestWriteEndpointRoleMatrix (0.17s)
+    --- PASS: TestWriteEndpointRoleMatrix/教师提交作业 (0.00s)
+    --- PASS: TestWriteEndpointRoleMatrix/助教提交作业 (0.00s)
+    --- PASS: TestWriteEndpointRoleMatrix/教师批阅空请求体 (0.00s)
+    --- PASS: TestWriteEndpointRoleMatrix/助教批阅 (0.00s)
+    --- PASS: TestWriteEndpointRoleMatrix/学生批阅 (0.00s)
+    --- PASS: TestWriteEndpointRoleMatrix/外班教师批阅本班作业 (0.00s)
+    --- PASS: TestWriteEndpointRoleMatrix/教师批准补交空请求体 (0.00s)
+    --- PASS: TestWriteEndpointRoleMatrix/助教批准补交 (0.00s)
+    --- PASS: TestWriteEndpointRoleMatrix/学生批准补交 (0.00s)
+    --- PASS: TestWriteEndpointRoleMatrix/助教记录催交空请求体 (0.00s)
+    --- PASS: TestWriteEndpointRoleMatrix/教师记录催交 (0.00s)
+    --- PASS: TestWriteEndpointRoleMatrix/学生记录催交 (0.00s)
+    --- PASS: TestWriteEndpointRoleMatrix/外班学生提交本班作业 (0.00s)
+=== RUN   TestSubmitPermissionsOverHTTP
+--- PASS: TestSubmitPermissionsOverHTTP (0.18s)
+=== RUN   TestSubmissionListPermissionsOverHTTP
+--- PASS: TestSubmissionListPermissionsOverHTTP (0.17s)
+PASS
+ok  	onlineclass/internal/httpapi	1.821s
+=== RUN   TestCrossClassIsNotFound
+--- PASS: TestCrossClassIsNotFound (0.12s)
+=== RUN   TestGrantExtensionValidation
+=== RUN   TestGrantExtensionValidation/缺少学生
+=== RUN   TestGrantExtensionValidation/原因过短
+=== RUN   TestGrantExtensionValidation/原因为空
+=== RUN   TestGrantExtensionValidation/原因过长
+=== RUN   TestGrantExtensionValidation/缺少截止
+=== RUN   TestGrantExtensionValidation/截止不晚于原截止
+=== RUN   TestGrantExtensionValidation/截止早于原截止
+=== RUN   TestGrantExtensionValidation/非学生账号
+=== RUN   TestGrantExtensionValidation/外班学生
+=== RUN   TestGrantExtensionValidation/不存在的学生
+=== RUN   TestGrantExtensionValidation/助教越权
+=== RUN   TestGrantExtensionValidation/学生越权
+--- PASS: TestGrantExtensionValidation (0.12s)
+    --- PASS: TestGrantExtensionValidation/缺少学生 (0.00s)
+    --- PASS: TestGrantExtensionValidation/原因过短 (0.00s)
+    --- PASS: TestGrantExtensionValidation/原因为空 (0.00s)
+    --- PASS: TestGrantExtensionValidation/原因过长 (0.00s)
+    --- PASS: TestGrantExtensionValidation/缺少截止 (0.00s)
+    --- PASS: TestGrantExtensionValidation/截止不晚于原截止 (0.00s)
+    --- PASS: TestGrantExtensionValidation/截止早于原截止 (0.00s)
+    --- PASS: TestGrantExtensionValidation/非学生账号 (0.00s)
+    --- PASS: TestGrantExtensionValidation/外班学生 (0.00s)
+    --- PASS: TestGrantExtensionValidation/不存在的学生 (0.00s)
+    --- PASS: TestGrantExtensionValidation/助教越权 (0.00s)
+    --- PASS: TestGrantExtensionValidation/学生越权 (0.00s)
+=== RUN   TestReviewPermissionAndValidation
+=== RUN   TestReviewPermissionAndValidation/缺少版本号
+=== RUN   TestReviewPermissionAndValidation/非法结论
+=== RUN   TestReviewPermissionAndValidation/不存在的版本
+--- PASS: TestReviewPermissionAndValidation (0.12s)
+    --- PASS: TestReviewPermissionAndValidation/缺少版本号 (0.00s)
+    --- PASS: TestReviewPermissionAndValidation/非法结论 (0.00s)
+    --- PASS: TestReviewPermissionAndValidation/不存在的版本 (0.00s)
+=== RUN   TestSubmitPermissionAndResourceChecks
+--- PASS: TestSubmitPermissionAndResourceChecks (0.12s)
+=== RUN   TestHistoryPermissions
+--- PASS: TestHistoryPermissions (0.12s)
+PASS
+ok  	onlineclass/internal/service	2.487s
+testing: warning: no tests to run
+PASS
+ok  	onlineclass/internal/session	1.384s [no tests to run]
+testing: warning: no tests to run
+PASS
+ok  	onlineclass/internal/store	1.957s [no tests to run]

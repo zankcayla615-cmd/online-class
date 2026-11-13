@@ -1,0 +1,88 @@
+{{define "head"}}
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{.}} · 课下作业平台</title>
+  <style>
+    :root { color-scheme: light; --ink:#1f2430; --muted:#6b7280; --line:#e6e9f2;
+      --brand:#2f5bea; --brand-dark:#2449c4; --ok:#0f7b4f; --warn:#b42318; --bg:#f4f6fa; }
+    * { box-sizing: border-box; }
+    body { margin:0; background:var(--bg); color:var(--ink);
+      font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif; font-size:14px; }
+    header { background:#1f2a44; color:#fff; padding:12px 22px; display:flex; gap:18px;
+      align-items:center; flex-wrap:wrap; }
+    header .brand { font-weight:600; font-size:15px; }
+    header nav a { color:#c9d4f5; text-decoration:none; font-size:13px; margin-right:14px; }
+    header nav a:hover { color:#fff; }
+    header .who { margin-left:auto; font-size:12px; color:#c9d4f5; display:flex; align-items:center; gap:12px; }
+    header .clock { color:#8fa3d9; }
+    header form { margin:0; }
+    main { max-width:1000px; margin:24px auto 40px; padding:0 20px; }
+    .card { background:#fff; border-radius:12px; padding:20px 22px; margin-bottom:16px;
+      box-shadow:0 4px 18px rgba(23,42,84,.06); }
+    h1 { font-size:20px; margin:0 0 6px; }
+    h2 { font-size:15px; margin:0 0 14px; }
+    h3 { font-size:13px; margin:18px 0 8px; color:#374151; }
+    .muted { color:var(--muted); font-size:12px; }
+    .sub { color:var(--muted); font-size:12px; margin:0 0 14px; }
+    .flash { background:#e8f7ef; color:var(--ok); border:1px solid #b9e6cd; border-radius:9px;
+      padding:10px 14px; margin-bottom:16px; font-size:13px; }
+    .errbox { background:#fdecec; color:var(--warn); border:1px solid #f6c9c5; border-radius:9px;
+      padding:12px 14px; margin-bottom:16px; font-size:13px; }
+    .errbox code { background:#fff; color:var(--warn); }
+    code { background:#f3f5fa; padding:2px 6px; border-radius:5px; font-size:12px; }
+    .chip { display:inline-block; background:#eef2ff; color:#2f4bd8; border-radius:999px;
+      padding:3px 10px; font-size:12px; white-space:nowrap; }
+    .chip.state-PASSED { background:#e8f7ef; color:var(--ok); }
+    .chip.state-RETURNED { background:#fff4e5; color:#9a5b00; }
+    .chip.state-SUBMITTED { background:#eef2ff; color:#2f4bd8; }
+    .chip.state-NOT_SUBMITTED { background:#f1f3f9; color:#5a6478; }
+    .chip.draft { background:#f1f3f9; color:#5a6478; }
+    .chip.published { background:#e8f7ef; color:var(--ok); }
+    .chip.warn { background:#fdecec; color:var(--warn); }
+    table { width:100%; border-collapse:collapse; font-size:13px; }
+    th { text-align:left; color:var(--muted); font-weight:500; font-size:12px;
+      padding:8px 8px 8px 0; border-bottom:1px solid var(--line); }
+    td { padding:9px 8px 9px 0; border-bottom:1px solid #f4f6fb; vertical-align:top; }
+    tr:last-child td { border-bottom:0; }
+    .actions { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+    .inline { display:inline; margin:0; }
+    a { color:#2f4bd8; text-decoration:none; }
+    a:hover { text-decoration:underline; }
+    .btn { display:inline-block; border:1px solid #d5dae6; background:#fff; color:#28324a;
+      border-radius:8px; padding:7px 13px; font-size:13px; cursor:pointer; text-decoration:none; }
+    .btn:hover { background:#f7f9fd; text-decoration:none; }
+    .btn.primary { background:var(--brand); border-color:var(--brand); color:#fff; }
+    .btn.primary:hover { background:var(--brand-dark); }
+    .btn.ghost { background:transparent; border-color:rgba(255,255,255,.4); color:#fff; }
+    .btn.small { padding:4px 10px; font-size:12px; }
+    .btn.danger { color:var(--warn); border-color:#f2c9c5; }
+    .form label { display:block; font-size:13px; color:#374151; margin-bottom:14px; }
+    .form input, .form textarea, .form select { width:100%; margin-top:6px; padding:9px 11px;
+      border:1px solid #d5dae6; border-radius:8px; font-size:14px; font-family:inherit; background:#fff; }
+    .form input:focus, .form textarea:focus, .form select:focus { outline:2px solid #c7d7ff; border-color:#5b7cfa; }
+    .form .row2 { display:flex; gap:14px; flex-wrap:wrap; }
+    .form .row2 > * { flex:1 1 220px; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:12px; }
+    .stat { background:#f8faff; border:1px solid #e8edfb; border-radius:10px; padding:12px 14px; }
+    .stat b { display:block; font-size:22px; font-weight:600; margin-top:4px; }
+    .stat span { color:var(--muted); font-size:12px; }
+    .answer { background:#f8f9fc; border:1px solid var(--line); border-radius:8px; padding:10px 12px;
+      white-space:pre-wrap; word-break:break-word; font-size:13px; max-height:220px; overflow:auto; }
+    .empty { color:var(--muted); font-size:13px; padding:14px 0; }
+    .tagline { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:14px; }
+    .split { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    @media (max-width:760px) { .split { grid-template-columns:1fr; } header .who { width:100%; margin-left:0; } }
+  </style>
+{{end}}
+
+{{define "top"}}
+  <header>
+    <span class="brand">课下作业平台</span>
+    <nav><a href="/assignments">作业列表</a></nav>
+    <span class="who">
+      <span>{{.Base.User.Name}}（{{.Base.Role}}）· {{.Base.User.ID}}</span>
+      <span class="clock">{{.Base.Now}} · 偏移 {{.Base.Offset}}</span>
+      <form method="post" action="/logout"><button class="btn ghost small" type="submit">退出</button></form>
+    </span>
+  </header>
+{{end}}
