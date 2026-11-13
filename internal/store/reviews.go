@@ -96,14 +96,22 @@ type CreateReviewParams struct {
 	ToState           string
 	ExpectedVersionNo int
 	ActorRole         string
+	// Award 非空时在同一事务内发积分；唯一约束冲突视为"已发过"，不报错。
+	Award *PointsEntry
+}
+
+// CreateReviewResult 回报本次批阅是否真的新发了积分。
+type CreateReviewResult struct {
+	Awarded bool
 }
 
 // CreateReview 在同一事务内：写批阅结论、推进状态行（乐观锁）、写审计事件。
 //
 // 只有"当前版本 + 状态为 SUBMITTED"才能成功；否则条件更新影响 0 行返回 ErrConflict。
 // 同一版本第二个结论由 UNIQUE(version_id) 拦截。
-func (s *Store) CreateReview(ctx context.Context, p CreateReviewParams) error {
-	return s.Tx(ctx, func(tx *sql.Tx) error {
+func (s *Store) CreateReview(ctx context.Context, p CreateReviewParams) (CreateReviewResult, error) {
+	var awarded bool
+	err := s.Tx(ctx, func(tx *sql.Tx) error {
 		rev := p.Review
 		var reqID any
 		if rev.RequestID != "" {
@@ -149,6 +157,25 @@ func (s *Store) CreateReview(ctx context.Context, p CreateReviewParams) error {
 			p.FromState, p.ToState, p.ExpectedVersionNo, formatTime(rev.CreatedAt)); err != nil {
 			return fmt.Errorf("写入批阅事件失败: %w", err)
 		}
+
+		if p.Award != nil {
+			res, err := tx.ExecContext(ctx,
+				`INSERT INTO points_ledger (id, student_id, assignment_id, reason, points, created_at)
+				 VALUES (?, ?, ?, ?, ?, ?)
+				 ON CONFLICT (assignment_id, student_id, reason) DO NOTHING`,
+				p.Award.ID, p.Award.StudentID, p.Award.AssignmentID, p.Award.Reason,
+				p.Award.Points, formatTime(p.Award.CreatedAt))
+			if err != nil {
+				return fmt.Errorf("写入积分流水失败: %w", err)
+			}
+			n, err := res.RowsAffected()
+			if err != nil {
+				return fmt.Errorf("读取发奖结果失败: %w", err)
+			}
+			// 影响 1 行 = 本次真的发奖；0 行 = 之前已发过，保持幂等。
+			awarded = n == 1
+		}
 		return nil
 	})
+	return CreateReviewResult{Awarded: awarded}, err
 }

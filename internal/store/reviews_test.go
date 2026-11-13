@@ -37,7 +37,7 @@ func TestCreateReviewAdvancesEnrollmentAndEvent(t *testing.T) {
 	ctx := context.Background()
 	sub := seedSubmitted(t, st)
 
-	err := st.CreateReview(ctx, store.CreateReviewParams{
+	_, err := st.CreateReview(ctx, store.CreateReviewParams{
 		Review: sampleReview(sub.ID, store.ReviewPass), AssignmentID: "HW1", StudentID: "S01",
 		FromState: store.StateSubmitted, ToState: store.StatePassed,
 		ExpectedVersionNo: 1, ActorRole: store.RoleTeacher,
@@ -83,13 +83,13 @@ func TestCreateReviewRejectsDuplicateVersion(t *testing.T) {
 		FromState: store.StateSubmitted, ToState: store.StatePassed,
 		ExpectedVersionNo: 1, ActorRole: store.RoleTeacher,
 	}
-	if err := st.CreateReview(ctx, params); err != nil {
+	if _, err := st.CreateReview(ctx, params); err != nil {
 		t.Fatalf("首次批阅失败: %v", err)
 	}
 
 	// 同一版本第二次结论：UNIQUE(version_id) 拦截
 	params.Review = sampleReview(sub.ID, store.ReviewReject)
-	err := st.CreateReview(ctx, params)
+	_, err := st.CreateReview(ctx, params)
 	if err == nil || !store.IsUniqueViolation(err) {
 		t.Fatalf("同版本第二结论应触发唯一约束，实际 %v", err)
 	}
@@ -111,7 +111,7 @@ func TestCreateReviewStaleStateConflict(t *testing.T) {
 	sub := seedSubmitted(t, st)
 
 	// 期望版本号写错 → 条件更新未命中 → ErrConflict，且不写入结论
-	err := st.CreateReview(ctx, store.CreateReviewParams{
+	_, err := st.CreateReview(ctx, store.CreateReviewParams{
 		Review: sampleReview(sub.ID, store.ReviewPass), AssignmentID: "HW1", StudentID: "S01",
 		FromState: store.StateSubmitted, ToState: store.StatePassed,
 		ExpectedVersionNo: 9, ActorRole: store.RoleTeacher,

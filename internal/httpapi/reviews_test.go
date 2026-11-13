@@ -48,10 +48,16 @@ func TestReviewFlowOverHTTP(t *testing.T) {
 	if passed["state"] != store.StatePassed || passed["replayed"] != false {
 		t.Fatalf("通过后状态应为 PASSED 且非重放，实际 %v", passed)
 	}
+	if passed["points_awarded"] != true || passed["points"] != float64(10) {
+		t.Fatalf("首次通过应发 10 分，实际 %v", passed)
+	}
 
 	code, replay := doJSONBody(t, teacher, http.MethodPost, path, jsonBody(t, reviewBody(versionID(t, sub), store.ReviewPass, "写得很清楚")))
 	if code != http.StatusOK || replay["replayed"] != true {
 		t.Fatalf("同结论重放应 200 且 replayed=true，实际 %d %v", code, replay)
+	}
+	if replay["points_awarded"] != false || replay["points"] != float64(0) {
+		t.Fatalf("重放不应再发奖，实际 %v", replay)
 	}
 	if replay["id"] != passed["id"] {
 		t.Fatalf("重放应返回首次结论，实际 %v vs %v", replay["id"], passed["id"])
@@ -75,6 +81,43 @@ func TestReviewFlowOverHTTP(t *testing.T) {
 	review, _ := first["review"].(map[string]any)
 	if review["decision"] != store.ReviewPass || review["feedback"] != "写得很清楚" {
 		t.Fatalf("历史中应带批阅结论，实际 %v", first["review"])
+	}
+
+	// 库里应只有 1 条流水：重放没有偷偷再发一次
+	var n int
+	if err := env.st.DB().QueryRow(
+		`SELECT COUNT(1) FROM points_ledger WHERE assignment_id = ? AND student_id = 'S01'`, id).Scan(&n); err != nil {
+		t.Fatalf("统计流水失败: %v", err)
+	}
+	if n != 1 {
+		t.Fatalf("应只有 1 条积分流水，实际 %d", n)
+	}
+}
+
+// TestReviewRejectDoesNotAwardOverHTTP 退回不发奖，接口与库里都要能看出来。
+func TestReviewRejectDoesNotAwardOverHTTP(t *testing.T) {
+	env := newTestEnv(t)
+	teacher := env.login(t, "T01", store.DemoPassword)
+	student := env.login(t, "S01", store.DemoPassword)
+	id := publishAssignment(t, env, teacher)
+	sub := submitOne(t, env, student, id, "我的答案", "req-1", 0)
+
+	code, rejected := doJSONBody(t, teacher, http.MethodPost, env.ts.URL+"/api/assignments/"+id+"/reviews",
+		jsonBody(t, reviewBody(versionID(t, sub), store.ReviewReject, "补充测试")))
+	if code != http.StatusCreated || rejected["state"] != store.StateReturned {
+		t.Fatalf("退回应 201 且 RETURNED，实际 %d %v", code, rejected)
+	}
+	if rejected["points_awarded"] != false || rejected["points"] != float64(0) {
+		t.Fatalf("退回不应发奖，实际 %v", rejected)
+	}
+
+	var n int
+	if err := env.st.DB().QueryRow(
+		`SELECT COUNT(1) FROM points_ledger WHERE student_id = 'S01'`).Scan(&n); err != nil {
+		t.Fatalf("统计流水失败: %v", err)
+	}
+	if n != 0 {
+		t.Fatalf("退回不应产生流水，实际 %d 条", n)
 	}
 }
 

@@ -67,6 +67,8 @@ func (s *Server) handleReviewPost(w http.ResponseWriter, r *http.Request) {
 	body["state"] = res.Enrollment.State
 	body["current_version_no"] = res.Enrollment.CurrentVersionNo
 	body["replayed"] = res.Replayed
+	body["points_awarded"] = res.PointsAwarded
+	body["points"] = res.Points
 	status := http.StatusCreated
 	if res.Replayed {
 		status = http.StatusOK

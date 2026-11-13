@@ -40,6 +40,10 @@ type ReviewResult struct {
 	Review     store.Review
 	Enrollment store.Enrollment
 	Replayed   bool
+	// PointsAwarded 表示本次批阅是否真的新发了积分（重放/非首次通过为 false）。
+	PointsAwarded bool
+	// Points 是本次发放的分值；未发奖为 0。
+	Points int
 }
 
 // Review 批阅某个提交版本。
@@ -110,6 +114,7 @@ func (s *ReviewService) Review(ctx context.Context, actor store.User, assignment
 	if err != nil {
 		return ReviewResult{}, err
 	}
+	now := s.clk.Now()
 	rev := store.Review{
 		ID:        revID,
 		VersionID: versionID,
@@ -117,10 +122,27 @@ func (s *ReviewService) Review(ctx context.Context, actor store.User, assignment
 		Feedback:  feedback,
 		TeacherID: actor.ID,
 		RequestID: strings.TrimSpace(in.RequestID),
-		CreatedAt: s.clk.Now(),
+		CreatedAt: now,
 	}
 
-	err = s.store.CreateReview(ctx, store.CreateReviewParams{
+	// 通过才发奖，且与批阅同事务落库；退回、重放、非首次通过都不产生流水。
+	var award *store.PointsEntry
+	if toState == store.StatePassed {
+		awardID, err := newPointsID()
+		if err != nil {
+			return ReviewResult{}, err
+		}
+		award = &store.PointsEntry{
+			ID:           awardID,
+			StudentID:    sub.StudentID,
+			AssignmentID: assignmentID,
+			Reason:       store.ReasonFirstPass,
+			Points:       store.PointsFirstPass,
+			CreatedAt:    now,
+		}
+	}
+
+	out, err := s.store.CreateReview(ctx, store.CreateReviewParams{
 		Review:            rev,
 		AssignmentID:      assignmentID,
 		StudentID:         sub.StudentID,
@@ -128,6 +150,7 @@ func (s *ReviewService) Review(ctx context.Context, actor store.User, assignment
 		ToState:           toState,
 		ExpectedVersionNo: enr.CurrentVersionNo,
 		ActorRole:         actor.Role,
+		Award:             award,
 	})
 	if err != nil {
 		switch {
@@ -151,7 +174,17 @@ func (s *ReviewService) Review(ctx context.Context, actor store.User, assignment
 			StateVersion:     enr.StateVersion + 1,
 			CurrentVersionNo: enr.CurrentVersionNo,
 		},
+		PointsAwarded: out.Awarded,
+		Points:        pointsIf(out.Awarded),
 	}, nil
+}
+
+// pointsIf 把"是否发奖"翻译成分值，避免调用方自己写 10/0 的魔法数。
+func pointsIf(awarded bool) int {
+	if awarded {
+		return store.PointsFirstPass
+	}
+	return 0
 }
 
 // replayReview 处理"该版本已有结论"：同结论视为重放，异结论明确拒绝。
@@ -189,4 +222,12 @@ func newReviewID() (string, error) {
 		return "", fmt.Errorf("生成批阅编号失败: %w", err)
 	}
 	return "RV-" + hex.EncodeToString(buf), nil
+}
+
+func newPointsID() (string, error) {
+	buf := make([]byte, 6)
+	if _, err := rand.Read(buf); err != nil {
+		return "", fmt.Errorf("生成积分流水编号失败: %w", err)
+	}
+	return "PT-" + hex.EncodeToString(buf), nil
 }
