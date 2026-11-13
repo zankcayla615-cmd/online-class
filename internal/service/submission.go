@@ -60,6 +60,8 @@ type SubmissionHistory struct {
 	EffectiveDeadline time.Time
 	ExtensionApplied  bool
 	Versions          []store.Submission
+	// Reviews 以版本号为键，包含已被新版本取代的旧结论（旧版本与意见可查）。
+	Reviews map[int]store.Review
 }
 
 // Submit 追加一个提交版本。
@@ -218,6 +220,19 @@ func (s *SubmissionService) History(ctx context.Context, actor store.User, assig
 	if err != nil {
 		return SubmissionHistory{}, err
 	}
+	reviews, err := s.store.ListReviews(ctx, assignmentID, studentID)
+	if err != nil {
+		return SubmissionHistory{}, err
+	}
+	byVersionNo := make(map[int]store.Review, len(reviews))
+	for _, rev := range reviews {
+		for _, v := range versions {
+			if v.ID == rev.VersionID {
+				byVersionNo[v.VersionNo] = rev
+				break
+			}
+		}
+	}
 	return SubmissionHistory{
 		AssignmentID:      assignmentID,
 		StudentID:         studentID,
@@ -226,6 +241,7 @@ func (s *SubmissionService) History(ctx context.Context, actor store.User, assig
 		EffectiveDeadline: deadline,
 		ExtensionApplied:  extended,
 		Versions:          versions,
+		Reviews:           byVersionNo,
 	}, nil
 }
 

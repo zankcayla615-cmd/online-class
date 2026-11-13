@@ -53,6 +53,23 @@ type Submission struct {
 	CreatedAt    time.Time
 }
 
+// Review 是一条批阅结论：一个提交版本最多一条（UNIQUE(version_id)）。
+type Review struct {
+	ID        string
+	VersionID string
+	Decision  string
+	Feedback  string
+	TeacherID string
+	RequestID string
+	CreatedAt time.Time
+}
+
+// 批阅结论常量。
+const (
+	ReviewPass   = "pass"
+	ReviewReject = "reject"
+)
+
 // Extension 是补交授权：每个学生每份作业最多一条。
 type Extension struct {
 	AssignmentID string

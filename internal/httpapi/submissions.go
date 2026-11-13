@@ -94,7 +94,11 @@ func (s *Server) handleSubmissionList(w http.ResponseWriter, r *http.Request) {
 
 	versions := make([]map[string]any, 0, len(h.Versions))
 	for _, sub := range h.Versions {
-		versions = append(versions, submissionView(sub))
+		view := submissionView(sub)
+		if rev, ok := h.Reviews[sub.VersionNo]; ok {
+			view["review"] = reviewView(rev)
+		}
+		versions = append(versions, view)
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
 		"assignment_id":      h.AssignmentID,
