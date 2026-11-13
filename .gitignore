@@ -6,8 +6,8 @@ data/
 
 # 构建与测试产物
 bin/
-coverage.out
-coverage.html
+/coverage.out
+/coverage.html
 *.exe
 
 # 临时文件
