@@ -2,13 +2,13 @@
 package main
 
 import (
-	"encoding/json"
 	"log"
 	"net/http"
 	"time"
 
 	"onlineclass/internal/clock"
 	"onlineclass/internal/config"
+	"onlineclass/internal/httpapi"
 	"onlineclass/internal/store"
 )
 
@@ -34,20 +34,11 @@ func main() {
 	}
 
 	clk := clock.New(cfg.ClockOffset)
-
-	mux := http.NewServeMux()
-	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		_ = json.NewEncoder(w).Encode(map[string]string{
-			"status": "ok",
-			"now":    clk.Now().Format(time.RFC3339),
-			"offset": clk.Offset().String(),
-		})
-	})
+	app := httpapi.New(st, clk, 8*time.Hour)
 
 	srv := &http.Server{
 		Addr:              ":" + cfg.Port,
-		Handler:           mux,
+		Handler:           app.Handler(),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 	log.Printf("课下作业平台启动：http://localhost:%s 数据库=%s 教学时钟偏移=%s",

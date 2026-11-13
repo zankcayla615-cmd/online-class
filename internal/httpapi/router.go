@@ -1,0 +1,73 @@
+// Package httpapi 提供 HTTP 接口与页面。
+//
+// 约定：
+//   - 身份只来自会话（见 middleware.go）；
+//   - 跨班资源统一返回 404，不泄露存在性；
+//   - 业务拒绝返回 4xx + 稳定错误码，不返回 500。
+package httpapi
+
+import (
+	"embed"
+	"html/template"
+	"log"
+	"net/http"
+	"time"
+
+	"onlineclass/internal/clock"
+	"onlineclass/internal/session"
+	"onlineclass/internal/store"
+)
+
+//go:embed templates/*.html
+var templateFS embed.FS
+
+const sessionCookieName = "oc_session"
+
+// Server 汇总处理请求所需的依赖。
+type Server struct {
+	store    *store.Store
+	clk      *clock.Clock
+	sessions *session.Manager
+	tpl      *template.Template
+}
+
+// New 构造服务；ttl 为会话有效期。
+func New(st *store.Store, clk *clock.Clock, ttl time.Duration) *Server {
+	tpl := template.Must(template.ParseFS(templateFS, "templates/*.html"))
+	return &Server{store: st, clk: clk, sessions: session.NewManager(clk, ttl), tpl: tpl}
+}
+
+// Handler 注册路由。所有请求先经过身份解析中间件。
+func (s *Server) Handler() http.Handler {
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("GET /healthz", s.handleHealth)
+
+	mux.HandleFunc("GET /login", s.handleLoginPage)
+	mux.HandleFunc("POST /login", s.handleLogin)
+	mux.HandleFunc("POST /logout", s.handleLogout)
+	mux.HandleFunc("GET /{$}", s.handleHome)
+
+	mux.Handle("GET /api/me", s.requireAuth(http.HandlerFunc(s.handleMe)))
+	mux.Handle("GET /api/assignments/{id}", s.requireAuth(http.HandlerFunc(s.handleAssignmentGet)))
+	mux.Handle("GET /api/students/{id}", s.requireAuth(http.HandlerFunc(s.handleStudentGet)))
+	mux.Handle("POST /api/assignments/{id}/submissions", s.requireAuth(http.HandlerFunc(s.handleSubmissionPost)))
+	mux.Handle("POST /api/assignments/{id}/reviews", s.requireAuth(http.HandlerFunc(s.handleReviewPost)))
+	mux.Handle("POST /api/assignments/{id}/extensions", s.requireAuth(http.HandlerFunc(s.handleExtensionPost)))
+	mux.Handle("POST /api/assignments/{id}/reminders", s.requireAuth(http.HandlerFunc(s.handleReminderPost)))
+
+	return s.withUser(mux)
+}
+
+func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, http.StatusOK, map[string]string{
+		"status": "ok",
+		"now":    s.clk.Now().Format(time.RFC3339),
+		"offset": s.clk.Offset().String(),
+	})
+}
+
+// logError 记录服务端内部错误（不把内部细节返回给客户端）。
+func logError(action string, err error) {
+	log.Printf("[httpapi] %s 失败: %v", action, err)
+}
