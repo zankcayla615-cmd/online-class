@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>课下作业平台 · 交互原型（题目 03）</title>
+<link rel="stylesheet" href="app.css" />
+</head>
+<body>
+<div id="login" class="login"></div>
+
+<div id="shell" class="shell hidden">
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">03</span>
+      <div class="brand-txt">
+        <strong>课下作业平台</strong>
+        <small>交互原型 · 数据仅存页面内存，刷新即重置</small>
+      </div>
+    </div>
+    <div class="clock">
+      <span class="clock-label">教学时钟</span>
+      <span id="clockNow" class="clock-val">—</span>
+      <button class="btn ghost sm" data-act="clock1h">+1 小时</button>
+      <button class="btn ghost sm" data-act="clock1d">+1 天</button>
+      <button class="btn ghost sm" data-act="clockReset">重置时钟</button>
+    </div>
+    <div class="who">
+      <span id="whoName" class="who-name"></span>
+      <select id="userSwitch" class="user-switch" aria-label="切换身份"></select>
+      <button class="btn ghost sm" data-act="reset">重置演示</button>
+    </div>
+  </header>
+  <div class="body">
+    <nav id="nav" class="nav"></nav>
+    <main id="main" class="main"></main>
+  </div>
+</div>
+
+<div id="toasts" class="toasts"></div>
+<script src="app.js"></script>
+</body>
+</html>
