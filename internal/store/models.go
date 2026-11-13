@@ -8,6 +8,9 @@ import (
 // ErrNotFound 表示查询对象不存在。调用方据此返回 404，避免泄露存在性。
 var ErrNotFound = errors.New("记录不存在")
 
+// ErrConflict 表示条件更新未命中（状态已被并发改变），调用方转 409。
+var ErrConflict = errors.New("状态冲突")
+
 // 角色常量。
 const (
 	RoleTeacher   = "teacher"

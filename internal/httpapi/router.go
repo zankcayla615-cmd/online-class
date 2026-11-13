@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"onlineclass/internal/clock"
+	"onlineclass/internal/service"
 	"onlineclass/internal/session"
 	"onlineclass/internal/store"
 )
@@ -25,16 +26,23 @@ const sessionCookieName = "oc_session"
 
 // Server 汇总处理请求所需的依赖。
 type Server struct {
-	store    *store.Store
-	clk      *clock.Clock
-	sessions *session.Manager
-	tpl      *template.Template
+	store       *store.Store
+	clk         *clock.Clock
+	sessions    *session.Manager
+	tpl         *template.Template
+	assignments *service.AssignmentService
 }
 
 // New 构造服务；ttl 为会话有效期。
 func New(st *store.Store, clk *clock.Clock, ttl time.Duration) *Server {
 	tpl := template.Must(template.ParseFS(templateFS, "templates/*.html"))
-	return &Server{store: st, clk: clk, sessions: session.NewManager(clk, ttl), tpl: tpl}
+	return &Server{
+		store:       st,
+		clk:         clk,
+		sessions:    session.NewManager(clk, ttl),
+		tpl:         tpl,
+		assignments: service.NewAssignmentService(st, clk),
+	}
 }
 
 // Handler 注册路由。所有请求先经过身份解析中间件。
@@ -49,6 +57,9 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /{$}", s.handleHome)
 
 	mux.Handle("GET /api/me", s.requireAuth(http.HandlerFunc(s.handleMe)))
+	mux.Handle("POST /api/assignments", s.requireAuth(http.HandlerFunc(s.handleAssignmentCreate)))
+	mux.Handle("PATCH /api/assignments/{id}", s.requireAuth(http.HandlerFunc(s.handleAssignmentUpdate)))
+	mux.Handle("POST /api/assignments/{id}/publish", s.requireAuth(http.HandlerFunc(s.handleAssignmentPublish)))
 	mux.Handle("GET /api/assignments/{id}", s.requireAuth(http.HandlerFunc(s.handleAssignmentGet)))
 	mux.Handle("GET /api/students/{id}", s.requireAuth(http.HandlerFunc(s.handleStudentGet)))
 	mux.Handle("POST /api/assignments/{id}/submissions", s.requireAuth(http.HandlerFunc(s.handleSubmissionPost)))
